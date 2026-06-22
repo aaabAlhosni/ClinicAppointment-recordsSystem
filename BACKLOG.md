@@ -29,3 +29,18 @@
 4. **Service layer** — I wrote the business logic that sits between the API and the database.
 5. **POST endpoints** — I can now create a new Doctor or Patient through the API.
 6. **404 on missing records** — I made the system respond clearly when a Doctor or Patient is not found.
+
+---
+
+## Version 0.3 — Full CRUD REST Controllers (Doctor + Patient)
+
+**Status:** In Progress
+
+### What this version includes:
+
+1. **GET by ID** — I can fetch a single Doctor or Patient by their ID.
+2. **GET all** — I can retrieve the full list of Doctors or Patients at once.
+3. **PUT update** — I can update an existing Doctor or Patient record through the API.
+4. **DELETE** — I can remove a Doctor or Patient and the system confirms it cleanly.
+5. **End-to-end verification** — I tested the full cycle: create, read, update, and delete via API.
+6. **H2 console validation** — I confirmed all changes reflect correctly in the database browser.
