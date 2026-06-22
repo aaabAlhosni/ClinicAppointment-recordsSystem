@@ -44,3 +44,18 @@
 4. **DELETE** — I can remove a Doctor or Patient and the system confirms it cleanly.
 5. **End-to-end verification** — I tested the full cycle: create, read, update, and delete via API.
 6. **H2 console validation** — I confirmed all changes reflect correctly in the database browser.
+
+---
+
+## Version 0.4 — Oracle Local Database Migration
+
+**Status:** In Progress
+
+### What this version includes:
+
+1. **Oracle JDBC driver** — I added the `ojdbc11` dependency so the app can connect to a real Oracle database.
+2. **H2 scoped to test** — I moved H2 to test scope only, removing it from the runtime to avoid conflicts with Oracle.
+3. **Oracle datasource config** — I replaced the H2 connection settings in `application.yml` with Oracle driver, URL, and credentials placeholders.
+4. **Oracle dialect** — I switched the Hibernate dialect from `H2Dialect` to `OracleDialect` so SQL is generated correctly for Oracle.
+5. **H2 console removed** — I cleaned out the H2 browser console config since it no longer applies to an Oracle-backed setup.
+6. **Schema auto-creation on Oracle** — Hibernate's `create-drop` strategy now runs against Oracle, auto-generating all five tables (`DOCTOR`, `PATIENT`, `APPOINTMENT`, `APPOINTMENT_SLOT`, `VISIT`) in the connected schema.
