@@ -14,6 +14,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidRequest(InvalidRequestException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Request", ex.getMessage());
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
         return buildResponse(HttpStatus.CONFLICT, "Business Rule Violation", ex.getMessage());
