@@ -28,3 +28,4 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // Phase 5 — patient history: all appointments ordered most-recent first.
     List<Appointment> findAllByPatientIdOrderByBookedAtDesc(Long patientId);
 }
+
