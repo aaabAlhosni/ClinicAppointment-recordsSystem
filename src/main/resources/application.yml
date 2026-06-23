@@ -3,14 +3,10 @@ spring:
     name: ClinicBookPatientSyetem
 
   datasource:
-    url: jdbc:h2:file:./data/clinicdb
-    # TODO (Oracle): url: jdbc:oracle:thin:@localhost:1521:ORCL
-    driver-class-name: org.h2.Driver
-    # TODO (Oracle): driver-class-name: oracle.jdbc.OracleDriver
-    username: sa
-    # TODO (Oracle): username: clinic_user
-    password:
-    # TODO (Oracle): password: your_password_here
+    url: jdbc:oracle:thin:@localhost:1521:ORCL          # TODO: update host/port/SID to match your instance
+    driver-class-name: oracle.jdbc.OracleDriver
+    username: clinic_user                                # TODO: your Oracle username
+    password: your_password_here                         # TODO: your Oracle password
 
   jpa:
     open-in-view: false
@@ -20,10 +16,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
-    database-platform: org.hibernate.dialect.H2Dialect
-    # TODO (Oracle): database-platform: org.hibernate.dialect.OracleDialect
+    database-platform: org.hibernate.dialect.OracleDialect
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
