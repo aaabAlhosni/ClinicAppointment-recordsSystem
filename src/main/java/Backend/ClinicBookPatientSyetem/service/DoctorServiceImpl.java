@@ -1,5 +1,6 @@
 package Backend.ClinicBookPatientSyetem.service;
 
+import Backend.ClinicBookPatientSyetem.exception.BusinessRuleException;
 import Backend.ClinicBookPatientSyetem.exception.ResourceNotFoundException;
 import Backend.ClinicBookPatientSyetem.model.dto.request.DoctorRequest;
 import Backend.ClinicBookPatientSyetem.model.dto.response.DoctorResponse;
@@ -16,6 +17,12 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public DoctorResponse create(DoctorRequest request) {
+        if (doctorRepository.existsByNameAndSpecialty(request.getName(), request.getSpecialty())) {
+            throw new BusinessRuleException(
+                    "A doctor with name '" + request.getName() +
+                    "' and specialty '" + request.getSpecialty() + "' already exists");
+        }
+
         Doctor doctor = Doctor.builder()
                 .name(request.getName())
                 .specialty(request.getSpecialty())
