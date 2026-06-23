@@ -70,15 +70,23 @@ public class AppointmentServiceImpl implements AppointmentService {
     public AppointmentResponse cancel(Long appointmentId) {
         Appointment appointment = findById(appointmentId);
 
-        if (appointment.getStatus() != AppointmentStatus.BOOKED) {
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED
+                || appointment.getStatus() == AppointmentStatus.COMPLETED) {
             throw new BusinessRuleException(
-                    "Cannot cancel an appointment that is not BOOKED. Current status: "
-                    + appointment.getStatus());
+                    "Cannot cancel an appointment with status: " + appointment.getStatus());
         }
 
-        // Status change only — the row is NEVER deleted.
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return toResponse(appointmentRepository.save(appointment));
+        appointmentRepository.save(appointment);
+
+        Appointment next = appointment.getRescheduledTo();
+        while (next != null && next.getStatus() == AppointmentStatus.BOOKED) {
+            next.setStatus(AppointmentStatus.CANCELLED);
+            appointmentRepository.save(next);
+            next = next.getRescheduledTo();
+        }
+
+        return toResponse(appointment);
     }
 
     // ── Reschedule ────────────────────────────────────────────────────────────
