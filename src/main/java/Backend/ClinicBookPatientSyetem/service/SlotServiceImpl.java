@@ -1,5 +1,6 @@
 package Backend.ClinicBookPatientSyetem.service;
 
+import Backend.ClinicBookPatientSyetem.exception.BusinessRuleException;
 import Backend.ClinicBookPatientSyetem.exception.InvalidRequestException;
 import Backend.ClinicBookPatientSyetem.exception.ResourceNotFoundException;
 import Backend.ClinicBookPatientSyetem.model.dto.response.ScheduleResponse;
@@ -36,17 +37,19 @@ public class SlotServiceImpl implements SlotService {
             throw new InvalidRequestException("Slot generation date cannot be in the past: " + date);
         }
 
-        // Iterate workStart → workEnd in 30-min steps; skip slots that already exist.
+        if (slotRepository.existsByDoctorIdAndSlotDate(doctorId, date)) {
+            throw new BusinessRuleException(
+                    "Slots have already been generated for doctor " + doctorId + " on " + date);
+        }
+
         LocalTime current = doctor.getWorkStart();
         while (!current.plusMinutes(30).isAfter(doctor.getWorkEnd())) {
-            if (!slotRepository.existsByDoctorIdAndSlotDateAndStartTime(doctorId, date, current)) {
-                slotRepository.save(AppointmentSlot.builder()
-                        .doctor(doctor)
-                        .slotDate(date)
-                        .startTime(current)
-                        .endTime(current.plusMinutes(30))
-                        .build());
-            }
+            slotRepository.save(AppointmentSlot.builder()
+                    .doctor(doctor)
+                    .slotDate(date)
+                    .startTime(current)
+                    .endTime(current.plusMinutes(30))
+                    .build());
             current = current.plusMinutes(30);
         }
 
