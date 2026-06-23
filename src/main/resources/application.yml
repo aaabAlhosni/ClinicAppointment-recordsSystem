@@ -13,6 +13,7 @@ spring:
     # TODO (Oracle): password: your_password_here
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: create-drop
     show-sql: true
