@@ -3,15 +3,15 @@ spring:
     name: ClinicBookPatientSyetem
 
   datasource:
-    url: jdbc:oracle:thin:@localhost:1521:ORCL          # TODO: update host/port/SID to match your instance
+    url: jdbc:oracle:thin:@localhost:1521/ORCLPDB         # TODO: update host/port/SID to match your instance
     driver-class-name: oracle.jdbc.OracleDriver
-    username: clinic_user                                # TODO: your Oracle username
-    password: your_password_here                         # TODO: your Oracle password
+    username: ClinicSystem_db                                # TODO: your Oracle username
+    password: 11223344                         # TODO: your Oracle password
 
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
