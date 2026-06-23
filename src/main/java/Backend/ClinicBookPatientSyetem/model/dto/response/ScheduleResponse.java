@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -25,8 +25,8 @@ public class ScheduleResponse {
     @Builder
     public static class SlotEntry {
         private Long slotId;
-        private LocalTime startTime;
-        private LocalTime endTime;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
         private String status;  // "FREE" or "BOOKED"
     }
 }

@@ -34,9 +34,7 @@ public class VisitServiceImpl implements VisitService {
                     "Cannot record visit for a cancelled appointment");
         }
 
-        LocalDateTime slotDateTime = LocalDateTime.of(
-                appointment.getSlot().getSlotDate(),
-                appointment.getSlot().getStartTime());
+        LocalDateTime slotDateTime = appointment.getSlot().getStartTime();
 
         if (slotDateTime.isAfter(LocalDateTime.now())) {
             throw new BusinessRuleException(

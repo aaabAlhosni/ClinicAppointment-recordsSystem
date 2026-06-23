@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -47,8 +48,8 @@ public class SlotServiceImpl implements SlotService {
             slotRepository.save(AppointmentSlot.builder()
                     .doctor(doctor)
                     .slotDate(date)
-                    .startTime(current)
-                    .endTime(current.plusMinutes(30))
+                    .startTime(LocalDateTime.of(date, current))
+                    .endTime(LocalDateTime.of(date, current.plusMinutes(30)))
                     .build());
             current = current.plusMinutes(30);
         }
