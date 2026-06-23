@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +24,7 @@ public class VisitResponse {
     private String doctorName;
 
     private LocalDate slotDate;
-    private LocalTime startTime;
+    private LocalDateTime startTime;
 
     private String diagnosis;
     private String prescription;

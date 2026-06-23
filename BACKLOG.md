@@ -49,13 +49,27 @@
 
 ## Version 0.4 — Oracle Local Database Migration
 
-**Status:** In Progress
+**Status:** Completed
 
 ### What this version includes:
 
 1. **Oracle JDBC driver** — I added the `ojdbc11` dependency so the app can connect to a real Oracle database.
 2. **H2 scoped to test** — I moved H2 to test scope only, removing it from the runtime to avoid conflicts with Oracle.
-3. **Oracle datasource config** — I replaced the H2 connection settings in `application.yml` with Oracle driver, URL, and credentials placeholders.
+3. **Oracle datasource config** — I replaced the H2 connection settings in `application.yml` with Oracle driver, URL, and credentials.
 4. **Oracle dialect** — I switched the Hibernate dialect from `H2Dialect` to `OracleDialect` so SQL is generated correctly for Oracle.
 5. **H2 console removed** — I cleaned out the H2 browser console config since it no longer applies to an Oracle-backed setup.
-6. **Schema auto-creation on Oracle** — Hibernate's `create-drop` strategy now runs against Oracle, auto-generating all five tables (`DOCTOR`, `PATIENT`, `APPOINTMENT`, `APPOINTMENT_SLOT`, `VISIT`) in the connected schema.
+6. **Schema auto-creation on Oracle** — Hibernate now runs against Oracle, auto-generating all five tables in the connected schema.
+
+---
+
+## Version 0.5 — Doctor Clinic Hours Validation
+
+**Status:** In Progress
+
+### What this version includes:
+
+1. **Day-shift enforcement** — I restricted doctor creation to clinic hours only: work start cannot be before 05:00 and work end cannot be after 19:00.
+2. **Work window integrity check** — I added a rule that ensures work start time must always be strictly before work end time.
+3. **Service-layer validation** — I placed both rules in `DoctorServiceImpl` as `BusinessRuleException` throws, consistent with existing duplicate-doctor validation.
+4. **Clear error messages** — Each violation returns a descriptive message so the API caller knows exactly which rule was broken.
+5. **Night-shift rejection** — Any attempt to register a doctor with evening or overnight hours is now explicitly blocked at the business logic level.

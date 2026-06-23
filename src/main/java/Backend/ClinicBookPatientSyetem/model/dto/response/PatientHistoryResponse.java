@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -36,8 +35,8 @@ public class PatientHistoryResponse {
         private Long doctorId;
         private String doctorName;
         private LocalDate slotDate;
-        private LocalTime startTime;
-        private LocalTime endTime;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
 
         private String diagnosis;
         private String prescription;

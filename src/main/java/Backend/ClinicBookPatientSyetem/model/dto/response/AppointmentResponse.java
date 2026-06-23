@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -26,8 +25,8 @@ public class AppointmentResponse {
 
     private Long slotId;
     private LocalDate slotDate;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     private AppointmentStatus status;
     private LocalDateTime bookedAt;
