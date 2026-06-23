@@ -84,3 +84,403 @@ Produce a Postman collection covering all nine API endpoints, including delibera
 | NFR-03 | Business logic must reside exclusively in the service layer; controllers handle HTTP concerns only and repositories handle data access only — no cross-layer responsibility leakage. |
 | NFR-04 | All data must survive application restarts in a persistent SQL database with foreign key constraints enforced at the database level, not solely in application code or Hibernate mapping. |
 | NFR-05 | The service layer must be independently unit-testable via Spring dependency injection without requiring a running HTTP server, live database, or full application context instantiation. |
+
+---
+
+## Before Running the Application
+
+Before I start the server, I make sure the following are in place.
+
+### Prerequisites
+
+| Requirement | Version |
+|---|---|
+| Java (JDK) | 17 or later |
+| Apache Maven | 3.8 or later |
+| Oracle Database | 19c or later (default profile) |
+| PostgreSQL | 14 or later (production profile — optional) |
+
+### Step 1 — Configure the Database
+
+Open `src/main/resources/application.yml` and fill in the three TODOs to point the app at your Oracle instance:
+
+```yaml
+datasource:
+  url: jdbc:oracle:thin:@localhost:1521/ORCLPDB   # ← update host/port/SID
+  username: ClinicSystem_db                         # ← your Oracle schema username
+  password: your_password_here                      # ← your Oracle password
+```
+
+> **PostgreSQL alternative:** If I want to run against PostgreSQL instead, I use the production profile (see Step 3 below). I set three environment variables — `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` — and the prod config picks them up automatically.
+
+### Step 2 — Build
+
+```bash
+mvn clean install -DskipTests
+```
+
+### Step 3 — Run
+
+**Oracle (default):**
+```bash
+mvn spring-boot:run
+```
+
+**PostgreSQL (production profile):**
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/clinicdb
+export DB_USERNAME=my_user
+export DB_PASSWORD=my_password
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
+```
+
+The API starts on **http://localhost:8080** with no context path prefix.
+
+---
+
+## API Endpoints
+
+All endpoints are prefixed with `http://localhost:8080`. Dates use ISO-8601 format (`YYYY-MM-DD`); times use `HH:mm:ss`.
+
+---
+
+### Doctors
+
+#### Create a Doctor
+```
+POST /api/doctors
+```
+I call this first to register a doctor before generating any slots.
+
+**Request body:**
+```json
+{
+  "name": "Dr. Sarah Malik",
+  "specialty": "Cardiology",
+  "workStart": "09:00:00",
+  "workEnd": "17:00:00"
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | String | Yes | Must be unique per specialty |
+| `specialty` | String | Yes | Must be unique per name |
+| `workStart` | LocalTime | Yes | Must be within clinic hours (05:00–19:00) |
+| `workEnd` | LocalTime | Yes | Must be after `workStart` |
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "name": "Dr. Sarah Malik",
+  "specialty": "Cardiology",
+  "workStart": "09:00:00",
+  "workEnd": "17:00:00"
+}
+```
+
+**Error cases:**
+- `409 Conflict` — doctor with same name + specialty already exists
+- `409 Conflict` — working hours are outside clinic hours (05:00–19:00)
+
+---
+
+### Slots
+
+#### Generate Slots for a Doctor
+```
+POST /api/doctors/{doctorId}/slots?date=YYYY-MM-DD
+```
+I generate 30-minute appointment slots across the doctor's working hours for a given date. I must call this before any bookings can be made for that date.
+
+**Response:** `201 Created`
+```json
+[
+  {
+    "id": 1,
+    "doctorId": 1,
+    "slotDate": "2026-06-25",
+    "startTime": "2026-06-25T09:00:00",
+    "endTime": "2026-06-25T09:30:00"
+  },
+  ...
+]
+```
+
+**Error cases:**
+- `409 Conflict` — slots have already been generated for this doctor on this date
+- `400 Bad Request` — date is in the past
+
+---
+
+#### View Doctor's Daily Schedule
+```
+GET /api/doctors/{doctorId}/schedule?date=YYYY-MM-DD
+```
+I use this to see all slots for a doctor on a given day, with each slot showing whether it is `FREE` or `BOOKED`.
+
+**Response:** `200 OK`
+```json
+{
+  "doctorId": 1,
+  "date": "2026-06-25",
+  "slots": [
+    {
+      "slotId": 1,
+      "startTime": "2026-06-25T09:00:00",
+      "endTime": "2026-06-25T09:30:00",
+      "status": "FREE"
+    },
+    {
+      "slotId": 2,
+      "startTime": "2026-06-25T09:30:00",
+      "endTime": "2026-06-25T10:00:00",
+      "status": "BOOKED"
+    }
+  ]
+}
+```
+
+---
+
+### Patients
+
+#### Register a Patient
+```
+POST /api/patients
+```
+
+**Request body:**
+```json
+{
+  "name": "Omar Al-Farsi",
+  "dateOfBirth": "1990-03-15",
+  "phone": "+971501234567"
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | String | Yes | |
+| `dateOfBirth` | LocalDate | Yes | Must be a past date |
+| `phone` | String | Yes | |
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "name": "Omar Al-Farsi",
+  "dateOfBirth": "1990-03-15",
+  "phone": "+971501234567"
+}
+```
+
+---
+
+#### View Patient Appointment History
+```
+GET /api/patients/{id}/history
+```
+I use this to retrieve a full audit trail of all appointments (including cancelled and rescheduled ones) for a patient, along with any visit/diagnosis records attached.
+
+**Response:** `200 OK`
+```json
+{
+  "patientId": 1,
+  "patientName": "Omar Al-Farsi",
+  "appointments": [
+    {
+      "appointmentId": 1,
+      "status": "RESCHEDULED",
+      "bookedAt": "2026-06-23T10:00:00",
+      "rescheduledToId": 2,
+      "slotId": 1,
+      "doctorId": 1,
+      "doctorName": "Dr. Sarah Malik",
+      "slotDate": "2026-06-25",
+      "startTime": "2026-06-25T09:00:00",
+      "endTime": "2026-06-25T09:30:00",
+      "diagnosis": null,
+      "prescription": null,
+      "visitRecordedAt": null
+    }
+  ]
+}
+```
+
+---
+
+### Appointments
+
+#### Book an Appointment
+```
+POST /api/appointments
+```
+
+**Request body:**
+```json
+{
+  "patientId": 1,
+  "slotId": 3
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `patientId` | Long | Yes | Patient must exist |
+| `slotId` | Long | Yes | Slot must exist and be FREE |
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "patientId": 1,
+  "patientName": "Omar Al-Farsi",
+  "doctorId": 1,
+  "doctorName": "Dr. Sarah Malik",
+  "slotId": 3,
+  "slotDate": "2026-06-25",
+  "startTime": "2026-06-25T10:00:00",
+  "endTime": "2026-06-25T10:30:00",
+  "status": "BOOKED",
+  "bookedAt": "2026-06-23T11:45:00",
+  "rescheduledToId": null
+}
+```
+
+**Error cases:**
+- `409 Conflict` — slot is already booked
+- `409 Conflict` — patient already has an active appointment with this doctor today
+
+---
+
+#### Cancel an Appointment
+```
+POST /api/appointments/{id}/cancel
+```
+I can cancel any appointment that is `BOOKED` or `RESCHEDULED`. Cancelling a `RESCHEDULED` appointment automatically cascades and cancels the linked new appointment as well — no active booking is left behind.
+
+**Response:** `200 OK` — the cancelled appointment record
+
+**Error cases:**
+- `409 Conflict` — appointment is already `CANCELLED` or `COMPLETED`
+
+---
+
+#### Reschedule an Appointment
+```
+POST /api/appointments/{id}/reschedule
+```
+I can only reschedule a `BOOKED` appointment. The original appointment is marked `RESCHEDULED` and linked to a newly created `BOOKED` appointment in the target slot — no row is ever deleted.
+
+**Request body:**
+```json
+{
+  "newSlotId": 7
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "original": {
+    "id": 1,
+    "status": "RESCHEDULED",
+    "rescheduledToId": 2,
+    ...
+  },
+  "rescheduled": {
+    "id": 2,
+    "status": "BOOKED",
+    "rescheduledToId": null,
+    ...
+  }
+}
+```
+
+**Error cases:**
+- `409 Conflict` — appointment is not `BOOKED`
+- `409 Conflict` — target slot is already booked
+
+---
+
+#### Record a Visit (Diagnosis)
+```
+POST /api/appointments/{id}/visit
+```
+I record a visit only after the appointment's scheduled start time has passed. The appointment must not be `CANCELLED`.
+
+**Request body:**
+```json
+{
+  "diagnosis": "Mild hypertension",
+  "prescription": "Amlodipine 5mg once daily"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "visitId": 1,
+  "appointmentId": 1,
+  "patientId": 1,
+  "patientName": "Omar Al-Farsi",
+  "doctorId": 1,
+  "doctorName": "Dr. Sarah Malik",
+  "slotDate": "2026-06-25",
+  "startTime": "2026-06-25T10:00:00",
+  "diagnosis": "Mild hypertension",
+  "prescription": "Amlodipine 5mg once daily",
+  "recordedAt": "2026-06-25T10:45:00"
+}
+```
+
+**Error cases:**
+- `409 Conflict` — appointment slot start time has not passed yet (future appointment)
+- `409 Conflict` — appointment is `CANCELLED`
+- `409 Conflict` — visit already recorded for this appointment
+
+---
+
+## HTTP Status Code Reference
+
+| Code | Meaning | When I see it |
+|---|---|---|
+| `200 OK` | Success (read or action) | GET requests, cancel, reschedule |
+| `201 Created` | Resource created | POST for doctors, patients, appointments, slots, visits |
+| `400 Bad Request` | Validation failure | Missing required fields, past date for slot generation |
+| `404 Not Found` | Resource does not exist | Unknown doctor/patient/slot/appointment ID |
+| `409 Conflict` | Business rule violation | Double-booking, duplicate doctor, cancelling a completed appointment, etc. |
+
+---
+
+## TODOs
+
+### Configuration (open)
+
+These three items in `src/main/resources/application.yml` must be updated before the application will connect to a database:
+
+- [ ] **Line 6** — `url`: replace `@localhost:1521/ORCLPDB` with the correct Oracle host, port, and SID/service name for your instance
+- [ ] **Line 8** — `username`: replace `ClinicSystem_db` with your Oracle schema username
+- [ ] **Line 9** — `password`: replace the placeholder with your actual Oracle password
+
+### Java Source (none)
+
+There are currently no open TODO comments in the Java source files. All planned features for the current phase are implemented.
+
+---
+
+## Database Normalization — Final 3NF Schema
+
+I started from a single flat relation containing every piece of appointment data and progressively decomposed it through First, Second, and Third Normal Form. The table below is the final result — the five-table schema used in the implementation.
+
+In every table, every non-key attribute depends on the whole primary key and nothing but the primary key, satisfying the 3NF requirement. The self-referencing FK on `Appointment` (`rescheduled_to`) enables the full rescheduling chain without row deletion and without introducing any 3NF violation.
+
+| Table | Primary Key | Foreign Keys | Remaining Attributes |
+|---|---|---|---|
+| **Doctor** | `doctor_id` | — | `name`, `specialty`, `work_start`, `work_end` |
+| **Patient** | `patient_id` | — | `name`, `date_of_birth`, `phone` |
+| **AppointmentSlot** | `slot_id` | `doctor_id → Doctor` | `slot_date`, `start_time`, `end_time` |
+| **Appointment** | `appointment_id` | `patient_id → Patient`<br>`slot_id → AppointmentSlot`<br>`rescheduled_to → Appointment` | `status`, `booked_at` |
+| **Visit** | `visit_id` | `appointment_id → Appointment` (UNIQUE) | `diagnosis`, `prescription`, `recorded_at` |
