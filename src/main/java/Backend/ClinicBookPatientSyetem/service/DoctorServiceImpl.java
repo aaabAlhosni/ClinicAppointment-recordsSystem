@@ -9,14 +9,27 @@ import Backend.ClinicBookPatientSyetem.repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+
 @Service
 @RequiredArgsConstructor
 public class DoctorServiceImpl implements DoctorService {
 
     private final DoctorRepository doctorRepository;
 
+    private static final LocalTime CLINIC_OPEN  = LocalTime.of(5, 0);
+    private static final LocalTime CLINIC_CLOSE = LocalTime.of(19, 0);
+
     @Override
     public DoctorResponse create(DoctorRequest request) {
+        if (request.getWorkStart().isBefore(CLINIC_OPEN) || request.getWorkEnd().isAfter(CLINIC_CLOSE)) {
+            throw new BusinessRuleException(
+                    "Doctor working hours must be within clinic hours (05:00 – 19:00)");
+        }
+        if (!request.getWorkStart().isBefore(request.getWorkEnd())) {
+            throw new BusinessRuleException(
+                    "Work start time must be before work end time");
+        }
         if (doctorRepository.existsByNameAndSpecialty(request.getName(), request.getSpecialty())) {
             throw new BusinessRuleException(
                     "A doctor with name '" + request.getName() +
